@@ -34,10 +34,6 @@ public class Entrenador {
     @Column(name = "fecha_vinculacion", nullable = false)
     private LocalDate fechaVinculacion;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "pueblo_id", nullable = false)
-    private Pueblo pueblo;
-
     @Column(nullable = false, unique = true, length = 100)
     private String uuid;
 
