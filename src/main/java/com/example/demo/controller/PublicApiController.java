@@ -31,23 +31,38 @@ public class PublicApiController {
         this.tipoPokemonService = tipoPokemonService;
     }
 
+    /**
+     * POST /entrenador/login
+     * Body: { "nombre": "Ash", "apellido": "Ketchum" }
+     * Returns the trainer's UUID if found.
+     */
     @PostMapping("/entrenador/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        return entrenadorService.findByEmail(request.email())
+        return entrenadorService.login(request.nombre(), request.apellido())
                 .map(entrenador -> ResponseEntity.ok(new LoginResponse(entrenador.getUuid())))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    /**
+     * GET /pokemons/{tipo}
+     * {tipo} = UUID of the tipo_pokemon
+     */
     @GetMapping("/pokemons/{tipo}")
     public ResponseEntity<List<PokemonResponse>> findByTipo(@PathVariable String tipo) {
         List<Pokemon> pokemons = pokemonService.findByTipoUuid(tipo);
         return ResponseEntity.ok(pokemons.stream().map(this::toResponse).collect(Collectors.toList()));
     }
 
+    /**
+     * POST /pokemons
+     * Body: { "nombre": "Pikachu", "descripcion": "...", "generacion": 1,
+     *         "fechaDescubrimiento": "1996-02-27",
+     *         "tipoPokemonId": 1 }
+     * tipoPokemonId = numeric ID of the tipo_pokemon row
+     */
     @PostMapping("/pokemons")
     public ResponseEntity<PokemonResponse> createPokemon(@RequestBody PokemonCreateRequest request) {
-        TipoPokemonRequest tipoPokemonRequest = request.tipoPokemon();
-        TipoPokemon tipoPokemon = findTipoPokemon(tipoPokemonRequest);
+        TipoPokemon tipoPokemon = tipoPokemonService.findById(request.tipoPokemonId()).orElse(null);
         if (tipoPokemon == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -58,13 +73,18 @@ public class PublicApiController {
         pokemon.setFechaDescubrimiento(request.fechaDescubrimiento());
         pokemon.setGeneracion(request.generacion());
         pokemon.setTipoPokemon(tipoPokemon);
-        pokemon.setUuid(request.uuid() == null || request.uuid().isBlank()
-                ? null : request.uuid());
+        // uuid is auto-generated if not provided
+        if (request.uuid() != null && !request.uuid().isBlank()) {
+            pokemon.setUuid(request.uuid());
+        }
 
         Pokemon saved = pokemonService.save(pokemon);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
     }
 
+    /**
+     * GET /entrenador/{uuid}/pokemons
+     */
     @GetMapping("/entrenador/{uuid}/pokemons")
     public ResponseEntity<List<PokemonResponse>> getEntrenadorPokemons(@PathVariable("uuid") String entrenadorUuid) {
         List<PokemonResponse> response = entrenadorService.getPokemonsByUuid(entrenadorUuid).stream()
@@ -73,6 +93,10 @@ public class PublicApiController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * POST /entrenador/{entrenadorUuid}/pokemons/{pokemonUuid}
+     * Captures a pokemon for the entrenador (inserts into captura table)
+     */
     @PostMapping("/entrenador/{entrenadorUuid}/pokemons/{pokemonUuid}")
     public ResponseEntity<Void> addPokemonToEntrenador(@PathVariable String entrenadorUuid,
                                                        @PathVariable String pokemonUuid) {
@@ -83,18 +107,7 @@ public class PublicApiController {
         return ResponseEntity.notFound().build();
     }
 
-    private TipoPokemon findTipoPokemon(TipoPokemonRequest request) {
-        if (request == null) {
-            return null;
-        }
-        if (request.uuid() != null && !request.uuid().isBlank()) {
-            return tipoPokemonService.findByUuid(request.uuid()).orElse(null);
-        }
-        if (request.id() != null) {
-            return tipoPokemonService.findById(request.id()).orElse(null);
-        }
-        return null;
-    }
+    // ─── Helpers ──────────────────────────────────────────────
 
     private PokemonResponse toResponse(Pokemon pokemon) {
         return new PokemonResponse(
@@ -111,23 +124,19 @@ public class PublicApiController {
         );
     }
 
-    public record LoginRequest(String email) {
-    }
+    // ─── Records / DTOs ───────────────────────────────────────
 
-    public record LoginResponse(String uuid) {
-    }
+    public record LoginRequest(String nombre, String apellido) {}
+
+    public record LoginResponse(String uuid) {}
 
     public record PokemonCreateRequest(
             String nombre,
             String descripcion,
             LocalDate fechaDescubrimiento,
             Integer generacion,
-            TipoPokemonRequest tipoPokemon,
-            String uuid) {
-    }
-
-    public record TipoPokemonRequest(Integer id, String uuid, String descripcion) {
-    }
+            Integer tipoPokemonId,   // ID numérico del tipo_pokemon
+            String uuid) {}
 
     public record PokemonResponse(
             Integer id,
@@ -136,9 +145,7 @@ public class PublicApiController {
             String descripcion,
             LocalDate fechaDescubrimiento,
             Integer generacion,
-            TipoPokemonResponse tipoPokemon) {
-    }
+            TipoPokemonResponse tipoPokemon) {}
 
-    public record TipoPokemonResponse(Integer id, String uuid, String descripcion) {
-    }
+    public record TipoPokemonResponse(Integer id, String uuid, String descripcion) {}
 }

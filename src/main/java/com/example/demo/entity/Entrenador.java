@@ -25,14 +25,15 @@ public class Entrenador {
     @Column(nullable = false, length = 50)
     private String apellido;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String email;
-
     @Column(name = "fecha_nacimiento", nullable = false)
     private LocalDate fechaNacimiento;
 
     @Column(name = "fecha_vinculacion", nullable = false)
     private LocalDate fechaVinculacion;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "pueblo_id", nullable = false)
+    private Pueblo pueblo;
 
     @Column(nullable = false, unique = true, length = 100)
     private String uuid;

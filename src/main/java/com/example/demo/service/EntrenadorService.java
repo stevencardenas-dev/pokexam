@@ -38,8 +38,12 @@ public class EntrenadorService {
         return entrenadorRepository.findByUuid(uuid);
     }
 
-    public Optional<Entrenador> findByEmail(String email) {
-        return entrenadorRepository.findByEmail(email);
+    /** Login: find entrenador by nombre + apellido */
+    public Optional<Entrenador> login(String nombre, String apellido) {
+        return entrenadorRepository.findAll().stream()
+                .filter(e -> e.getNombre().equalsIgnoreCase(nombre)
+                          && e.getApellido().equalsIgnoreCase(apellido))
+                .findFirst();
     }
 
     public Set<Pokemon> getPokemonsByUuid(String uuid) {
@@ -67,9 +71,7 @@ public class EntrenadorService {
             }).orElse(false);
     }
 
-    /**
-     * Links a Pokemon to an Entrenador (represents capturing).
-     */
+    /** Links a Pokemon to an Entrenador (captura). */
     public boolean capturarPokemon(String entrenadorUuid, String pokemonUuid) {
         Optional<Entrenador> entrenadorOpt = entrenadorRepository.findByUuid(entrenadorUuid);
         Optional<Pokemon> pokemonOpt = pokemonRepository.findByUuid(pokemonUuid);
@@ -78,23 +80,6 @@ public class EntrenadorService {
             Entrenador entrenador = entrenadorOpt.get();
             Pokemon pokemon = pokemonOpt.get();
             entrenador.getPokemons().add(pokemon);
-            entrenadorRepository.save(entrenador);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Unlinks a Pokemon from an Entrenador (represents releasing).
-     */
-    public boolean liberarPokemon(String entrenadorUuid, String pokemonUuid) {
-        Optional<Entrenador> entrenadorOpt = entrenadorRepository.findByUuid(entrenadorUuid);
-        Optional<Pokemon> pokemonOpt = pokemonRepository.findByUuid(pokemonUuid);
-
-        if (entrenadorOpt.isPresent() && pokemonOpt.isPresent()) {
-            Entrenador entrenador = entrenadorOpt.get();
-            Pokemon pokemon = pokemonOpt.get();
-            entrenador.getPokemons().remove(pokemon);
             entrenadorRepository.save(entrenador);
             return true;
         }

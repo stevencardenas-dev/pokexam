@@ -1,0 +1,45 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.pueblo (
+  id integer NOT NULL DEFAULT nextval('pueblo_id_seq'::regclass),
+  nombre character varying NOT NULL,
+  uuid character varying NOT NULL UNIQUE,
+  CONSTRAINT pueblo_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.tipo_pokemon (
+  id integer NOT NULL DEFAULT nextval('tipo_pokemon_id_seq'::regclass),
+  descripcion character varying NOT NULL,
+  uuid character varying NOT NULL UNIQUE,
+  CONSTRAINT tipo_pokemon_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.entrenador (
+  id integer NOT NULL DEFAULT nextval('entrenador_id_seq'::regclass),
+  nombre character varying NOT NULL,
+  apellido character varying NOT NULL,
+  fecha_nacimiento date NOT NULL,
+  fecha_vinculacion date NOT NULL,
+  pueblo_id integer NOT NULL,
+  uuid character varying NOT NULL UNIQUE,
+  email text UNIQUE,
+  CONSTRAINT entrenador_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_entrenador_pueblo FOREIGN KEY (pueblo_id) REFERENCES public.pueblo(id)
+);
+CREATE TABLE public.pokemon (
+  id integer NOT NULL DEFAULT nextval('pokemon_id_seq'::regclass),
+  nombre character varying NOT NULL,
+  descripcion text,
+  tipo_pokemon integer NOT NULL,
+  fecha_descubrimiento date,
+  generacion integer,
+  uuid character varying NOT NULL UNIQUE,
+  CONSTRAINT pokemon_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_pokemon_tipo FOREIGN KEY (tipo_pokemon) REFERENCES public.tipo_pokemon(id)
+);
+CREATE TABLE public.captura (
+  entrenador_id integer NOT NULL,
+  pokemon_id integer NOT NULL,
+  CONSTRAINT captura_pkey PRIMARY KEY (entrenador_id, pokemon_id),
+  CONSTRAINT fk_captura_entrenador FOREIGN KEY (entrenador_id) REFERENCES public.entrenador(id),
+  CONSTRAINT fk_captura_pokemon FOREIGN KEY (pokemon_id) REFERENCES public.pokemon(id)
+);
