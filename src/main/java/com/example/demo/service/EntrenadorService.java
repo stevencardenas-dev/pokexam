@@ -19,11 +19,13 @@ public class EntrenadorService {
 
     private final EntrenadorRepository entrenadorRepository;
     private final PokemonRepository pokemonRepository;
+    private final com.example.demo.repository.CapturaRepository capturaRepository;
 
     @Autowired
-    public EntrenadorService(EntrenadorRepository entrenadorRepository, PokemonRepository pokemonRepository) {
+    public EntrenadorService(EntrenadorRepository entrenadorRepository, PokemonRepository pokemonRepository, com.example.demo.repository.CapturaRepository capturaRepository) {
         this.entrenadorRepository = entrenadorRepository;
         this.pokemonRepository = pokemonRepository;
+        this.capturaRepository = capturaRepository;
     }
 
     public List<Entrenador> findAll() {
@@ -47,9 +49,12 @@ public class EntrenadorService {
     }
 
     public Set<Pokemon> getPokemonsByUuid(String uuid) {
-        return entrenadorRepository.findByUuid(uuid)
-                .map(Entrenador::getPokemons)
-                .orElseGet(HashSet::new);
+        List<com.example.demo.entity.Captura> capturas = capturaRepository.findByEntrenador_Uuid(uuid);
+        Set<Pokemon> result = new HashSet<>();
+        for (com.example.demo.entity.Captura c : capturas) {
+            if (c.getPokemon() != null) result.add(c.getPokemon());
+        }
+        return result;
     }
 
     public Entrenador save(Entrenador entrenador) {
@@ -79,8 +84,14 @@ public class EntrenadorService {
         if (entrenadorOpt.isPresent() && pokemonOpt.isPresent()) {
             Entrenador entrenador = entrenadorOpt.get();
             Pokemon pokemon = pokemonOpt.get();
-            entrenador.getPokemons().add(pokemon);
-            entrenadorRepository.save(entrenador);
+            com.example.demo.entity.Captura captura = com.example.demo.entity.Captura.builder()
+                    .entrenador(entrenador)
+                    .pokemon(pokemon)
+                    .fechaCaptura(java.time.LocalDate.now())
+                    .uuid(java.util.UUID.randomUUID().toString())
+                    .build();
+
+            capturaRepository.save(captura);
             return true;
         }
         return false;

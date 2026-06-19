@@ -43,4 +43,9 @@ public class Pokemon {
     @JsonIgnore
     @Builder.Default
     private Set<Entrenador> entrenadores = new HashSet<>();
+
+    @OneToMany(mappedBy = "pokemon", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @Builder.Default
+    private Set<com.example.demo.entity.Captura> capturas = new HashSet<>();
 }

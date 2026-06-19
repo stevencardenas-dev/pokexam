@@ -38,12 +38,15 @@ public class Entrenador {
     @Column(nullable = false, unique = true, length = 100)
     private String uuid;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "captura",
-        joinColumns = @JoinColumn(name = "entrenador_id"),
-        inverseJoinColumns = @JoinColumn(name = "pokemon_id")
-    )
+    @OneToMany(mappedBy = "entrenador", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<Pokemon> pokemons = new HashSet<>();
+    private Set<com.example.demo.entity.Captura> capturas = new HashSet<>();
+
+    public Set<Pokemon> getPokemons() {
+        Set<Pokemon> result = new HashSet<>();
+        for (com.example.demo.entity.Captura c : capturas) {
+            if (c.getPokemon() != null) result.add(c.getPokemon());
+        }
+        return result;
+    }
 }
